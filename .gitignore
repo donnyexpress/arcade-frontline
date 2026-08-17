@@ -1,0 +1,11 @@
+# Local cache
+.plugin-cache/
+.mavis/
+
+# Backup
+art/
+game-mockups/
+
+# OS files
+.DS_Store
+Thumbs.db
