@@ -31,20 +31,34 @@
     overflow: hidden;
     background: #2a4a2a;
   }
-  /* Phaser inserts its canvas inside #phaser-game. With Scale.FIT,
-     Phaser sizes the canvas to fit the parent while keeping the
-     1920x600 aspect ratio. We just need #phaser-game to fill its
-     parent. */
+  /* Phaser creates a canvas with intrinsic size 1920x600 inside
+     #phaser-game. We use the classic "object-fit: contain" CSS
+     pattern to scale the canvas to fit the container while
+     preserving its 1920x600 aspect ratio. This is more reliable
+     than Phaser's Scale.FIT mode for mobile. */
   #phaser-game {
     flex: 1 1 auto;
     width: 100%;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative;
+    overflow: hidden;
   }
-  #phaser-container canvas {
+  #phaser-game canvas {
     display: block;
+    /* Intrinsic size is 1920x600 (set by Phaser). We want it to
+       scale down to fit the container while keeping aspect ratio. */
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    /* Center the canvas in its container */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Improve rendering quality when scaled */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
   }
   /* Top HUD */
   #hud {
@@ -1766,17 +1780,17 @@ class GameScene extends Phaser.Scene {
   }
 
   setupResize() {
-    // With Phaser.Scale.FIT, the canvas auto-resizes to fit the parent
-    // while maintaining the 1920x600 aspect ratio. We just need to react
-    // to resize events to update our cached view dimensions.
+    // Canvas scaling is handled by CSS (max-width/max-height on
+    // #phaser-game canvas). Phaser's internal game size is fixed at
+    // 1920x600; the canvas element is just displayed smaller by the
+    // browser. Nothing to do here for resize, but keep the listener
+    // for future use.
     this.scale.on('resize', this.handleResize, this);
-    this.handleResize();
   }
 
   handleResize() {
-    // No camera zoom needed — FIT mode handles canvas sizing.
-    // We just need to make sure the camera shows the full map.
-    this.cameras.main.setBounds(0, 0, CFG.MAP_WIDTH, CFG.MAP_HEIGHT);
+    // No-op: canvas scaling is CSS-driven. The game world stays at
+    // MAP_WIDTH x MAP_HEIGHT and the camera shows the full map.
   }
 
   // Build a sprite for a unit object
@@ -2324,12 +2338,14 @@ function startPhaser() {
     width: CFG.MAP_WIDTH,
     height: CFG.MAP_HEIGHT,
     backgroundColor: '#2a4a2a',
+    // Phaser's Scale.FIT was unreliable on mobile — the canvas
+    // was overflowing the container. Instead we use Scale.NONE
+    // (fixed 1920x600 game) and let CSS scale the canvas element
+    // to fit the container via max-width/max-height. This is the
+    // classic "object-fit: contain" pattern, more reliable cross-browser.
     scale: {
-      // FIT mode: Phaser auto-scales the canvas to fit the parent,
-      // maintaining the aspect ratio. The game world stays at
-      // MAP_WIDTH x MAP_HEIGHT; the canvas just renders smaller.
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      mode: Phaser.Scale.NONE,
+      autoCenter: Phaser.Scale.NO_CENTER,
     },
     scene: GameScene,
   };
