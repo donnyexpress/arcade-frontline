@@ -31,6 +31,18 @@
     overflow: hidden;
     background: #2a4a2a;
   }
+  /* Phaser inserts its canvas inside #phaser-game. With Scale.FIT,
+     Phaser sizes the canvas to fit the parent while keeping the
+     1920x600 aspect ratio. We just need #phaser-game to fill its
+     parent. */
+  #phaser-game {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   #phaser-container canvas {
     display: block;
   }
@@ -1754,20 +1766,17 @@ class GameScene extends Phaser.Scene {
   }
 
   setupResize() {
+    // With Phaser.Scale.FIT, the canvas auto-resizes to fit the parent
+    // while maintaining the 1920x600 aspect ratio. We just need to react
+    // to resize events to update our cached view dimensions.
     this.scale.on('resize', this.handleResize, this);
     this.handleResize();
   }
 
   handleResize() {
-    const v = getView();
-    if (!v.mapW || !v.mapH) return;
-    // We want the camera to render the full 1920x600 map, scaled to fit the container.
-    // Phaser scale NONE means the canvas is CFG.MAP_WIDTH x CFG.MAP_HEIGHT, but we want it to fit.
-    // Use setZoom to scale the world, and center the camera.
-    const zoom = v.scale;
-    this.cameras.main.setZoom(zoom);
-    // Center the camera on the map
-    this.cameras.main.centerOn(CFG.MAP_WIDTH / 2, CFG.MAP_HEIGHT / 2);
+    // No camera zoom needed — FIT mode handles canvas sizing.
+    // We just need to make sure the camera shows the full map.
+    this.cameras.main.setBounds(0, 0, CFG.MAP_WIDTH, CFG.MAP_HEIGHT);
   }
 
   // Build a sprite for a unit object
@@ -2316,17 +2325,17 @@ function startPhaser() {
     height: CFG.MAP_HEIGHT,
     backgroundColor: '#2a4a2a',
     scale: {
-      mode: Phaser.Scale.NONE,
-      autoCenter: Phaser.Scale.NO_CENTER,
+      // FIT mode: Phaser auto-scales the canvas to fit the parent,
+      // maintaining the aspect ratio. The game world stays at
+      // MAP_WIDTH x MAP_HEIGHT; the canvas just renders smaller.
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: GameScene,
   };
   game = new Phaser.Game(config);
-  // The GameScene's preload() loads ATLAS_DATA_URL automatically.
-  // We just need to wait for the scene to be ready, then start the game.
   game.events.once('ready', () => {
     scene = game.scene.getScene('GameScene');
-    // scene is now set; initGame() and loop() will be triggered from the load event below
   });
 }
 
