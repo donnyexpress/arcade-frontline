@@ -798,3 +798,47 @@ in the right location relative to `index.html`. Different deployment scenarios
 
 Script-side test confirms 27 paths map to 27 unique sprite keys, including
 `BG_IMAGE` for the background.
+
+---
+
+## v1.30 — Phaser 3 migration (2026-08-18)
+
+**Why migrate?** Canvas2D unit sprites kept getting squished/distorted in the
+right-column unit buttons (different aspect ratios after CSS scaling). Phaser 3
+gives us proper sprite rendering with crisp scaling, depth-sorting by y, and
+smoother performance on mobile.
+
+### What changed
+
+1. **Phaser 3.80.1** loaded from CDN (`https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js`)
+2. **Single sprite atlas** — 1848×1056 PNG with 26 sprites in 7×4 grid of 264×264 cells
+3. **Atlas embedded as base64** in HTML (2.7MB) + JSON metadata (frame positions)
+4. **Frame extraction** — `cutAllAtlasFrames()` runs in `create()` and uses Phaser's `RenderTexture.draw()` + `saveTexture()` to extract each 264×264 sprite into a separate Phaser texture
+5. **Background generation** — drawn procedurally with `RenderTexture` (sky gradient, hills, grass, tufts)
+6. **Per-frame sync** — `syncUnits()` / `syncBuildings()` / `syncTurrets()` reconcile state.units/buildings/turrets with Phaser sprites
+7. **All v1.29 game logic preserved** — AI, combat, production, queues, building placement all unchanged
+
+### Result
+
+- **2.64MB** total file size (down from 3.5MB)
+- Phaser loaded from CDN (1.2MB external)
+- Sprites render crisply at any size (no more squishing)
+- Mobile performance improved via Phaser's WebGL renderer
+- Self-contained except for Phaser CDN
+
+### How to extend
+
+To add a new unit type:
+1. Add sprite to atlas at known row/col
+2. Add `atlas.json` entry with `{filename, frame: {x, y, w, h}}`
+3. Add unit def to `CFG.UNITS` and `CFG.BARRACKS_UNITS` (or `WARFACTORY_UNITS`/`TECHCENTER_UNITS`)
+4. Add spawn cell to `getUnitCol()` if needed
+5. Update `makeUnitSprite()` display size logic
+
+To add a new building type:
+1. Add sprite to atlas
+2. Add to `atlas.json`
+3. Add to `CFG.BUILDINGS_UNLOCK`
+4. Add cost/HP constants to `CFG`
+5. Update `makeBuildingSprite()` size logic
+
