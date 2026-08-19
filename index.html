@@ -18,41 +18,30 @@
     -webkit-touch-callout: none;
     touch-action: none;
   }
+  /* ============================================================
+     LAYOUT
+     The screen is divided into 4 separate "viewports" (boxes):
+       - #hud:           top bar (credits, timer, HP bars)
+       - #left-col:      left sidebar (building buttons)
+       - #phaser-game:   center area (the battlefield)
+       - #right-col:     right sidebar (unit buttons)
+     Each is its own flexbox/grid with explicit width/height
+     so they NEVER overlap. Sized with clamp() so they scale
+     proportionally with the viewport.
+     ============================================================ */
   #app {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: auto 1fr auto;
+    /* Row 1: hud spans all 3 columns. Row 2: left, center, right. */
   }
-  #phaser-container {
-    flex: 1 1 auto;
-    position: relative;
-    display: flex;
-    overflow: hidden;
-    background: #2a4a2a;
-  }
-  /* Phaser creates a canvas with intrinsic size 1920x600 inside
-     #phaser-game. We use JavaScript (fitCanvasToContainer) to size
-     the canvas to fit its container while preserving aspect ratio.
-     This is more reliable than CSS max-width/max-height which
-     can interact badly with the canvas's intrinsic dimensions. */
-  #phaser-game {
-    flex: 1 1 auto;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-  }
-  #phaser-game canvas {
-    display: block;
-    position: absolute;
-    /* width/height/left/top are set by JavaScript */
-  }
-  /* Top HUD */
+  /* Top HUD — full width */
   #hud {
-    flex: 0 0 60px;
-    height: 60px;
-    width: 100%;
+    grid-row: 1;
+    grid-column: 1 / -1;
+    height: clamp(48px, 8vh, 70px);
     background: linear-gradient(180deg, #3a2818 0%, #1a1410 100%);
     border-bottom: 3px solid #5d3a1c;
     display: flex;
@@ -60,11 +49,11 @@
     justify-content: space-between;
     padding: 0 12px;
     z-index: 10;
-    position: relative;
     box-shadow: 0 2px 8px rgba(0,0,0,0.5);
   }
   .hud-bar {
-    width: 220px; height: 24px;
+    width: clamp(140px, 22vw, 240px);
+    height: clamp(18px, 3.2vh, 28px);
     background: #1a1410;
     border: 2.5px solid #1a1410;
     border-radius: 6px;
@@ -81,55 +70,110 @@
   .hud-bar .label {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px;
+    font-weight: 700;
+    font-size: clamp(10px, 1.4vh, 14px);
     text-shadow: 0 0 3px #000;
   }
   #hud-center {
     display: flex; flex-direction: column;
     align-items: center; gap: 2px;
   }
-  #credits { font-size: 22px; font-weight: 800; color: #ffd700; }
-  #timer { font-size: 14px; color: #ccc; }
-  /* Side columns */
-  #left-col, #right-col {
-    flex: 0 0 110px;
-    width: 110px;
+  #credits {
+    font-size: clamp(16px, 2.4vh, 24px);
+    font-weight: 800; color: #ffd700;
+  }
+  #timer {
+    font-size: clamp(11px, 1.5vh, 15px); color: #ccc;
+  }
+  /* Left column (building buttons) */
+  #left-col {
+    grid-row: 2;
+    grid-column: 1;
+    width: clamp(88px, 11vw, 130px);
     background: linear-gradient(180deg, #3a2818 0%, #1a1410 100%);
     border: 2.5px solid #5d3a1c;
     border-radius: 8px;
+    margin: 4px 0 4px 4px;
     display: flex;
     flex-direction: column;
     padding: 4px;
-    gap: 3px;
+    gap: clamp(2px, 0.4vh, 4px);
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    height: 100%;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 5;
-    pointer-events: auto;
     box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    /* Make sure it never overlaps the center */
+    flex-shrink: 0;
   }
-  #left-col { margin: 4px 0 4px 4px; }
-  #right-col { margin: 4px 4px 4px 0; }
+  /* Right column (unit buttons) */
+  #right-col {
+    grid-row: 2;
+    grid-column: 3;
+    width: clamp(88px, 11vw, 130px);
+    background: linear-gradient(180deg, #3a2818 0%, #1a1410 100%);
+    border: 2.5px solid #5d3a1c;
+    border-radius: 8px;
+    margin: 4px 4px 4px 0;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    gap: clamp(2px, 0.4vh, 4px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
   #left-col::-webkit-scrollbar, #right-col::-webkit-scrollbar { width: 4px; }
   #left-col::-webkit-scrollbar-thumb, #right-col::-webkit-scrollbar-thumb { background: #888; border-radius: 2px; }
+  /* Center area: Phaser canvas */
+  #phaser-container {
+    grid-row: 2;
+    grid-column: 2;
+    /* No flex/grid — just a sized cell that holds the canvas */
+    position: relative;
+    overflow: hidden;
+    /* Solid dark green background — if Phaser hasn't drawn the
+       background yet, this prevents the body/page from showing
+       through (the "grids" the user was seeing). */
+    background: #2a4a2a;
+    margin: 4px;
+  }
+  #phaser-game {
+    position: absolute;
+    inset: 0;
+    /* This is just a sized div that Phaser will insert the canvas into. */
+  }
+  #phaser-game canvas {
+    display: block;
+    position: absolute;
+    /* width/height/left/top are set by JavaScript (fitCanvasToContainer) */
+    /* Crisp pixel scaling when Phaser canvas is rendered smaller than its
+       intrinsic 1920x600 size. */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  /* ============================================================
+     BUTTONS
+     Sized with clamp() so they scale with screen height.
+     Each button is a self-contained "box" with its own internal
+     layout (mini-canvas + label + cost + progress bar).
+     ============================================================ */
   .action-btn {
     background: #1d9bf0;
     color: #fff;
     border: 2.5px solid #1a1410;
     font-weight: 800;
-    font-size: 11px;
-    padding: 2px 2px 8px 2px;
+    font-size: clamp(9px, 1.2vh, 12px);
+    padding: 2px 2px clamp(4px, 0.8vh, 8px) 2px;
     border-radius: 6px;
     cursor: pointer;
     text-align: center;
     line-height: 1.05;
     flex: 0 0 auto;
     position: relative;
-    z-index: 2;
-    height: 64px;
+    /* Height scales with viewport height. 7.5vh ≈ 64px on 854h, 45px on 600h */
+    height: clamp(56px, 7.5vh, 80px);
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
@@ -149,17 +193,24 @@
   .action-btn.turret { background: #5a2a2a; }
   .action-btn.unit-btn { background: #1a4a6a; }
   .action-btn.building { border-color: #ffd700; box-shadow: 0 0 0 2px #ffd700 inset; }
-  .action-btn .btn-label { font-size: 8px; font-weight: 700; margin-top: 1px; }
-  .action-btn .btn-cost { font-size: 9px; }
+  .action-btn .btn-label {
+    font-size: clamp(7px, 0.9vh, 10px);
+    font-weight: 700;
+    margin-top: 1px;
+    line-height: 1.0;
+  }
+  .action-btn .btn-cost {
+    font-size: clamp(8px, 1.0vh, 11px);
+  }
   .action-btn .btn-mini-canvas {
     width: 100%;
-    height: 28px;
+    height: clamp(20px, 3.2vh, 32px);
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
   .action-btn .btn-progress {
     position: absolute; bottom: 0; left: 0; right: 0;
-    height: 6px; background: #000;
+    height: clamp(4px, 0.6vh, 7px); background: #000;
   }
   .action-btn .btn-progress-fill {
     height: 100%; background: #ffd700; width: 0%;
@@ -171,7 +222,7 @@
     background: #ff8800;
     color: #000;
     font-weight: 900;
-    font-size: 11px;
+    font-size: clamp(9px, 1.2vh, 12px);
     padding: 0 4px;
     border-radius: 8px;
     min-width: 16px;
@@ -191,7 +242,8 @@
     80% { transform: translateX(2px); }
   }
   .col-hint {
-    font-size: 8px; color: #888; text-align: center;
+    font-size: clamp(7px, 0.9vh, 9px);
+    color: #888; text-align: center;
     margin: 1px 0;
   }
   /* End screen */
@@ -285,47 +337,47 @@
         <div class="label" id="hp-blue-label">500 / 500</div>
       </div>
     </div>
+    <div id="left-col">
+      <div class="action-btn barracks" id="btn-barracks">
+        <canvas class="btn-mini-canvas" data-bld="barracks" width="64" height="32"></canvas>
+        <div class="btn-label">BARRACKS</div><div class="btn-cost">💰100</div>
+        <div class="btn-progress"><div class="btn-progress-fill"></div></div>
+        <div class="btn-queue-count"></div>
+      </div>
+      <div class="action-btn warfactory" id="btn-warfactory">
+        <canvas class="btn-mini-canvas" data-bld="warfactory" width="64" height="32"></canvas>
+        <div class="btn-label">WAR FACT.</div><div class="btn-cost">💰150</div>
+        <div class="btn-progress"><div class="btn-progress-fill"></div></div>
+        <div class="btn-queue-count"></div>
+      </div>
+      <div class="action-btn techcenter" id="btn-techcenter">
+        <canvas class="btn-mini-canvas" data-bld="techcenter" width="64" height="32"></canvas>
+        <div class="btn-label">TECH CTR</div><div class="btn-cost">💰250</div>
+        <div class="btn-progress"><div class="btn-progress-fill"></div></div>
+        <div class="btn-queue-count"></div>
+      </div>
+      <div class="action-btn pillbox" id="btn-pillbox">
+        <canvas class="btn-mini-canvas" data-bld="pillbox" width="64" height="32"></canvas>
+        <div class="btn-label">PILLBOX</div><div class="btn-cost">💰75</div>
+        <div class="btn-progress"><div class="btn-progress-fill"></div></div>
+        <div class="btn-queue-count"></div>
+      </div>
+      <div class="action-btn turret" id="btn-turret">
+        <canvas class="btn-mini-canvas" data-bld="turret" width="64" height="32"></canvas>
+        <div class="btn-label">TURRET</div><div class="btn-cost">💰150</div>
+        <div class="btn-progress"><div class="btn-progress-fill"></div></div>
+        <div class="btn-queue-count"></div>
+      </div>
+      <div class="col-hint">TAP = build</div>
+      <div class="col-hint">HOLD = cancel</div>
+    </div>
     <div id="phaser-container">
-      <div id="left-col">
-        <div class="action-btn barracks" id="btn-barracks">
-          <canvas class="btn-mini-canvas" data-bld="barracks" width="64" height="32"></canvas>
-          <div class="btn-label">BARRACKS</div><div class="btn-cost">💰100</div>
-          <div class="btn-progress"><div class="btn-progress-fill"></div></div>
-          <div class="btn-queue-count"></div>
-        </div>
-        <div class="action-btn warfactory" id="btn-warfactory">
-          <canvas class="btn-mini-canvas" data-bld="warfactory" width="64" height="32"></canvas>
-          <div class="btn-label">WAR FACT.</div><div class="btn-cost">💰150</div>
-          <div class="btn-progress"><div class="btn-progress-fill"></div></div>
-          <div class="btn-queue-count"></div>
-        </div>
-        <div class="action-btn techcenter" id="btn-techcenter">
-          <canvas class="btn-mini-canvas" data-bld="techcenter" width="64" height="32"></canvas>
-          <div class="btn-label">TECH CTR</div><div class="btn-cost">💰250</div>
-          <div class="btn-progress"><div class="btn-progress-fill"></div></div>
-          <div class="btn-queue-count"></div>
-        </div>
-        <div class="action-btn pillbox" id="btn-pillbox">
-          <canvas class="btn-mini-canvas" data-bld="pillbox" width="64" height="32"></canvas>
-          <div class="btn-label">PILLBOX</div><div class="btn-cost">💰75</div>
-          <div class="btn-progress"><div class="btn-progress-fill"></div></div>
-          <div class="btn-queue-count"></div>
-        </div>
-        <div class="action-btn turret" id="btn-turret">
-          <canvas class="btn-mini-canvas" data-bld="turret" width="64" height="32"></canvas>
-          <div class="btn-label">TURRET</div><div class="btn-cost">💰150</div>
-          <div class="btn-progress"><div class="btn-progress-fill"></div></div>
-          <div class="btn-queue-count"></div>
-        </div>
-        <div class="col-hint">TAP = build</div>
-        <div class="col-hint">HOLD = cancel</div>
-      </div>
       <div id="phaser-game"></div>
-      <div id="right-col">
-        <div class="col-hint">TAP = queue</div>
-        <div class="col-hint">HOLD = cancel</div>
-        <div id="right-buttons"></div>
-      </div>
+    </div>
+    <div id="right-col">
+      <div class="col-hint">TAP = queue</div>
+      <div class="col-hint">HOLD = cancel</div>
+      <div id="right-buttons"></div>
     </div>
   </div>
 
@@ -1714,25 +1766,40 @@ class GameScene extends Phaser.Scene {
   makeBackground() {
     const W = CFG.MAP_WIDTH, H = CFG.MAP_HEIGHT;
     const rt = this.add.renderTexture(0, 0, W, H);
-    // Sky (top half)
-    rt.fill(0xffe9a8, 1, 0, 0, W, H * 0.55);
-    // Distant hills
-    rt.fill(0xa8d8f0, 1, 0, 0, W, H * 0.55);
-    rt.fill(0x6a9c5a, 1, 100, H * 0.30, 150, H * 0.25);
-    rt.fill(0x6a9c5a, 1, 400, H * 0.35, 200, H * 0.20);
-    rt.fill(0x6a9c5a, 1, 800, H * 0.25, 200, H * 0.30);
-    rt.fill(0x6a9c5a, 1, 1200, H * 0.32, 200, H * 0.23);
-    rt.fill(0x6a9c5a, 1, 1600, H * 0.28, 200, H * 0.27);
-    // Grass (bottom half)
-    rt.fill(0x7ec850, 1, 0, H * 0.55, W, H * 0.45);
-    // Ground line
-    rt.fill(0x4a8030, 1, 0, H * 0.55, W, 3);
-    // Grass tufts
-    for (let i = 0; i < 80; i++) {
-      const x = Math.random() * W;
-      const y = H * 0.55 + 20 + Math.random() * (H * 0.45 - 30);
-      rt.fill(0x4a8030, 0.6, x, y, 4 + Math.random() * 6, 4 + Math.random() * 6);
+    // Use a Graphics object for smoother shapes (no visible grid rectangles)
+    const g = this.make.graphics({ add: false });
+    // Sky gradient (yellow horizon → soft blue)
+    g.fillGradientStyle(0xffe9a8, 0xffe9a8, 0xa8d8f0, 0xa8d8f0, 1);
+    g.fillRect(0, 0, W, H * 0.55);
+    // Distant rolling hills — soft ellipses, not rectangles
+    g.fillStyle(0x6a9c5a, 0.55);
+    const hillCenters = [
+      { x: 200, y: H * 0.55, rx: 220, ry: 80 },
+      { x: 550, y: H * 0.55, rx: 260, ry: 70 },
+      { x: 900, y: H * 0.55, rx: 240, ry: 90 },
+      { x: 1250, y: H * 0.55, rx: 280, ry: 75 },
+      { x: 1600, y: H * 0.55, rx: 250, ry: 85 },
+    ];
+    for (const h of hillCenters) {
+      g.fillEllipse(h.x, h.y - h.ry * 0.5, h.rx * 2, h.ry * 2);
     }
+    rt.draw(g);
+    g.destroy();
+    // Grass (bottom half) — single solid fill
+    rt.fill(0x7ec850, 1, 0, H * 0.55, W, H * 0.45);
+    // Slight horizon darkening
+    rt.fill(0x4a8030, 1, 0, H * 0.55, W, 3);
+    // Grass tufts — small circles, randomly placed
+    const tufts = this.make.graphics({ add: false });
+    tufts.fillStyle(0x4a8030, 0.7);
+    for (let i = 0; i < 120; i++) {
+      const x = Math.random() * W;
+      const y = H * 0.58 + Math.random() * (H * 0.40);
+      const r = 1.5 + Math.random() * 3;
+      tufts.fillCircle(x, y, r);
+    }
+    rt.draw(tufts);
+    tufts.destroy();
     rt.saveTexture('background');
     rt.destroy();
     this.add.image(W / 2, H / 2, 'background').setDepth(-1000);
@@ -2325,7 +2392,10 @@ buildUnitButtons();
 // The canvas has intrinsic size 1920x600 (set by Phaser). We compute
 // the largest size that fits in the container and center it.
 function fitCanvasToContainer() {
-  const container = document.getElementById('phaser-game');
+  // Phaser inserts the canvas into #phaser-game, which is inside
+  // #phaser-container. We size the canvas to fit #phaser-container
+  // (the grid cell that holds the canvas).
+  const container = document.getElementById('phaser-container');
   if (!container) return;
   const canvas = container.querySelector('canvas');
   if (!canvas) return;
