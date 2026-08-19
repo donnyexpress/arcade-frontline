@@ -9,3 +9,6 @@ game-mockups/
 # OS files
 .DS_Store
 Thumbs.db
+
+# OS / runtime state
+.home/
