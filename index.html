@@ -1753,13 +1753,13 @@ class GameScene extends Phaser.Scene {
     this.baseSprites = [];     // {sprite, side, baseScale}
     this.projectileSprites = []; // {g, life, maxLife}
 
-    // Background, then cut atlas frames, then create base sprites
+    // Background, then cut atlas frames
     this.makeBackground();
     this.cutAllAtlasFrames();
-    this.createBaseSprites();
     this.setupResize();
 
-    // Hide loading screen
+    // Hide loading screen — Phaser is initialized and ready.
+    // Base sprites will be created in initGame() once state exists.
     const loading = document.getElementById('loading');
     if (loading) loading.style.display = 'none';
   }
@@ -1901,19 +1901,22 @@ class GameScene extends Phaser.Scene {
 
   makeBaseSprite(side) {
     const frameName = 'base-' + side;
-    const b = state.sides[side].base;
-    const sprite = this.add.image(b.x, b.y, 'atlas', frameName);
+    // Default base position (used if state isn't ready yet)
+    const defaultX = side === 'red' ? 60 : 1920 - 60;
+    const defaultY = 300;
+    const x = (state && state.sides[side]) ? state.sides[side].base.x : defaultX;
+    const y = (state && state.sides[side]) ? state.sides[side].base.y : defaultY;
+    const sprite = this.add.image(x, y, 'atlas', frameName);
     sprite.setOrigin(0.5, 0.6);
     const displaySize = 140;
     const baseScale = displaySize / 264;
     sprite.setScale(baseScale);
-    sprite.setDepth(b.y);
-    return { sprite, baseScale };
+    sprite.setDepth(y);
+    return { sprite, baseScale, side };
   }
 
-  // Create base sprites for both sides. Called once at game start
-  // and on rematch. The base position never changes so we just
-  // create them and leave them in place.
+  // Create base sprites for both sides. Called once state is ready
+  // (from initGame). The base position is set from state.sides[side].base.
   createBaseSprites() {
     if (!this.baseSprites) this.baseSprites = [];
     for (const s of this.baseSprites) s.sprite.destroy();
