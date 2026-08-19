@@ -1747,14 +1747,16 @@ class GameScene extends Phaser.Scene {
 
   create() {
     scene = this;
-    this.unitSprites = [];     // {sprite, unit}
-    this.buildingSprites = []; // {sprite, bld}
-    this.turretSprites = [];   // {sprite, t}
+    this.unitSprites = [];     // {sprite, unit, baseScale}
+    this.buildingSprites = []; // {sprite, bld, baseScale}
+    this.turretSprites = [];   // {sprite, t, baseScale}
+    this.baseSprites = [];     // {sprite, side, baseScale}
     this.projectileSprites = []; // {g, life, maxLife}
 
-    // Background, then cut atlas frames, then setup
+    // Background, then cut atlas frames, then create base sprites
     this.makeBackground();
     this.cutAllAtlasFrames();
+    this.createBaseSprites();
     this.setupResize();
 
     // Hide loading screen
@@ -1818,19 +1820,26 @@ class GameScene extends Phaser.Scene {
   cutAllAtlasFrames() {
     // Read atlas.json — frames are keyed by filename
     const atlasJson = ATLAS_JSON;
-    // Build a map: filename -> {x, y, w, h}
-    const frameMap = {};
-    for (const f of atlasJson.frames) {
-      frameMap[f.filename] = f.frame;
+    const atlasTexture = this.textures.get('atlas');
+    if (!atlasTexture) {
+      console.error('Atlas texture not found');
+      return;
     }
-    for (const [key, frame] of Object.entries(frameMap)) {
-      if (!frame || key.startsWith('empty_')) continue;
-      const { x, y, w, h } = frame;
-      // Extract a sub-region from the atlas texture
-      const rt = this.add.renderTexture(0, 0, w, h);
-      rt.draw('atlas', -x, -y);
-      rt.saveTexture(key);
-      rt.destroy();
+    // Get the source image (HTMLImageElement) from the atlas texture.
+    // We use addImage() to create sub-textures that REFERENCE the
+    // atlas's source image directly (not copy pixels into a new
+    // canvas). This preserves alpha perfectly and is much faster.
+    // The previous render-texture approach was adding a white
+    // background instead of preserving the sprite's transparency.
+    const sourceImage = atlasTexture.getSourceImage();
+    for (const f of atlasJson.frames) {
+      if (f.filename.startsWith('empty_')) continue;
+      const { x, y, w, h } = f.frame;
+      // addImage(key, source, x, y, width, height) — creates a
+      // texture that draws only the specified region of the source.
+      if (!this.textures.exists(f.filename)) {
+        this.textures.addImage(f.filename, sourceImage, x, y, w, h);
+      }
     }
   }
 
@@ -1849,20 +1858,19 @@ class GameScene extends Phaser.Scene {
   }
 
   // Build a sprite for a unit object
-  // IMPORTANT: We use setScale (not setDisplaySize) for the base size,
-  // because syncUnits() calls setScale every frame. setDisplaySize sets
-  // a scale based on the texture's natural size, but setScale(1) would
-  // override that back to the natural 264x264 size. Using setScale for
-  // the base size means the spawn flash animation (which also uses
-  // setScale) can multiply from a known base.
+  // Sizes are in world units (the map is 1920x600 world units).
+  // Tuned for good visibility: infantry ~70, sniper ~75, tanks 80-100.
   makeUnitSprite(unit) {
     const key = unit.type + '-' + unit.side;
     if (!this.textures.exists(key)) return null;
     const sprite = this.add.image(unit.x, unit.y, key);
     sprite.setOrigin(0.5, 0.55);
-    const isTank = ['tank', 'lighttank', 'heavy'].includes(unit.type);
-    const displaySize = isTank ? 56 : (unit.type === 'sniper' ? 48 : 44);
-    // Each frame in the atlas is 264x264. Scale = displaySize / 264.
+    let displaySize = 70;
+    if (unit.type === 'sniper') displaySize = 75;
+    else if (unit.type === 'tank') displaySize = 85;
+    else if (unit.type === 'lighttank') displaySize = 75;
+    else if (unit.type === 'heavy') displaySize = 100;
+    // Atlas frames are 264x264. Scale = displaySize / 264.
     const baseScale = displaySize / 264;
     sprite.setScale(baseScale);
     if (unit.side === 'blue') sprite.setFlipX(true);
@@ -1875,10 +1883,10 @@ class GameScene extends Phaser.Scene {
     if (!this.textures.exists(key)) return null;
     const sprite = this.add.image(bld.x, bld.y, key);
     sprite.setOrigin(0.5, 0.65);
-    let displaySize = 80;
-    if (bld.type === 'barracks') displaySize = 88;
-    else if (bld.type === 'warfactory') displaySize = 96;
-    else if (bld.type === 'techcenter') displaySize = 92;
+    let displaySize = 110;
+    if (bld.type === 'barracks') displaySize = 110;
+    else if (bld.type === 'warfactory') displaySize = 120;
+    else if (bld.type === 'techcenter') displaySize = 130;
     const baseScale = displaySize / 264;
     sprite.setScale(baseScale);
     sprite.setDepth(bld.y);
@@ -1890,7 +1898,7 @@ class GameScene extends Phaser.Scene {
     if (!this.textures.exists(key)) return null;
     const sprite = this.add.image(t.x, t.y, key);
     sprite.setOrigin(0.5, 0.65);
-    const displaySize = 48;
+    const displaySize = 60;
     const baseScale = displaySize / 264;
     sprite.setScale(baseScale);
     sprite.setDepth(t.y);
@@ -1903,11 +1911,26 @@ class GameScene extends Phaser.Scene {
     const b = state.sides[side].base;
     const sprite = this.add.image(b.x, b.y, key);
     sprite.setOrigin(0.5, 0.6);
-    const displaySize = 100;
+    const displaySize = 140;
     const baseScale = displaySize / 264;
     sprite.setScale(baseScale);
     sprite.setDepth(b.y);
     return { sprite, baseScale };
+  }
+
+  // Create base sprites for both sides. Called once at game start
+  // and on rematch. The base position never changes so we just
+  // create them and leave them in place.
+  createBaseSprites() {
+    if (!this.baseSprites) this.baseSprites = [];
+    for (const s of this.baseSprites) s.sprite.destroy();
+    this.baseSprites = [];
+    for (const side of ['red', 'blue']) {
+      const result = this.makeBaseSprite(side);
+      if (result) {
+        this.baseSprites.push({ sprite: result.sprite, side, baseScale: result.baseScale });
+      }
+    }
   }
 
   // Called by spawnUnit() — create a sprite for a newly-spawned unit
@@ -2359,11 +2382,16 @@ function initGame() {
     for (const s of scene.unitSprites) s.sprite.destroy();
     for (const s of scene.buildingSprites) s.sprite.destroy();
     for (const s of scene.turretSprites) s.sprite.destroy();
+    for (const s of scene.baseSprites) s.sprite.destroy();
     for (const p of scene.projectileSprites) p.destroy();
     scene.unitSprites = [];
     scene.buildingSprites = [];
     scene.turretSprites = [];
+    scene.baseSprites = [];
     scene.projectileSprites = [];
+    // Re-create base sprites (position is always the same, but
+    // we recreate them to be safe on rematch).
+    if (scene.createBaseSprites) scene.createBaseSprites();
   }
   document.getElementById('left-col').scrollTop = 0;
   document.getElementById('right-col').scrollTop = 0;
