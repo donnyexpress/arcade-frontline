@@ -1077,7 +1077,7 @@ function newState() {
 function createSide(side) {
   return {
     side,
-    base: { x: side === 'red' ? 60 : CFG.MAP_WIDTH - 60, y: CFG.MAP_HEIGHT / 2, hp: CFG.BASE_HP, maxHp: CFG.BASE_HP },
+    base: { x: side === 'red' ? 60 : CFG.MAP_WIDTH - 60, y: CFG.MAP_HEIGHT * 0.65, hp: CFG.BASE_HP, maxHp: CFG.BASE_HP },
     buildings: [],
     turrets: [],
     buildingQueue: [],
@@ -1137,7 +1137,7 @@ function spawnUnit(side, unitKey) {
     spawnY = bld.y + (Math.random() - 0.5) * 10;
   } else {
     spawnX = side === 'red' ? 80 : CFG.MAP_WIDTH - 80;
-    spawnY = CFG.MAP_HEIGHT / 2 + (Math.random() - 0.5) * 100;
+    spawnY = CFG.MAP_HEIGHT * 0.65 + (Math.random() - 0.5) * 100;
   }
   state.units.push({
     side,
@@ -2471,23 +2471,32 @@ function startPhaser() {
     parent: 'phaser-game',
     width: CFG.MAP_WIDTH,
     height: CFG.MAP_HEIGHT,
-    // backgroundColor is the WebGL clear color — what shows in
-    // areas where no sprite is drawn. The Phaser background
-    // sprite (drawn in makeBackground) covers the full 1920x600
-    // world, so this clear color is only seen briefly during load.
+    // The Phaser background sprite (drawn in makeBackground)
+    // covers the full 1920x600 world, so this clear color is
+    // only seen briefly during load.
     backgroundColor: '#2a4a2a',
-    // Enable alpha so the canvas itself can be transparent.
-    // We don't rely on this for sprite transparency (sprites
-    // have their own alpha channel), but it prevents the
-    // browser from showing a white background through the
-    // canvas before Phaser has drawn anything.
-    alpha: true,
+    // WebGL render config. alpha:true gives the canvas an alpha
+    // channel so transparent sprites show through to whatever
+    // is behind the canvas. Without this, WebGL canvases default
+    // to alpha:false and the canvas's "transparent" areas are
+    // rendered as opaque white.
+    render: {
+      antialias: true,
+      pixelArt: false,
+      // transparent:true gives the canvas an alpha channel.
+      // Without this, the WebGL canvas defaults to alpha:false
+      // and "transparent" sprite areas are rendered as opaque
+      // white — making sprites look like they have a checkered
+      // background. The `transparent` option in Phaser's render
+      // config maps to the WebGL context's `alpha` attribute.
+      transparent: true,
+      premultipliedAlpha: true,
+      clearBeforeRender: true,
+    },
     // Phaser's Scale.FIT was unreliable on mobile — the canvas
     // was overflowing the container. We use Scale.NONE (fixed
     // 1920x600 game) and let fitCanvasToContainer() size the
-    // canvas element to fit its parent. This is the most reliable
-    // approach: JS computes the largest size that fits, sets CSS
-    // width/height/left/top, and centers the canvas.
+    // canvas element to fit its parent.
     scale: {
       mode: Phaser.Scale.NONE,
       autoCenter: Phaser.Scale.NO_CENTER,
