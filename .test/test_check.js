@@ -5,9 +5,21 @@ const { chromium } = require('playwright');
   let errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://localhost:8765/.test/index_test.html', { waitUntil: 'load' });
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(4000);
   
-  // Place buildings & spawn all unit types
+  // Check textures
+  const tex = await page.evaluate(() => {
+    const s = game.scene.getScene('GameScene');
+    return {
+      rifleman: s.textures.exists('rifleman-red') && s.textures.exists('rifleman-blue'),
+      drone: s.textures.exists('drone-red') && s.textures.exists('drone-blue'),
+      fsv: s.textures.exists('fsv-red') && s.textures.exists('fsv-blue'),
+      heavy: s.textures.exists('heavy-red') && s.textures.exists('heavy-blue'),
+    };
+  });
+  console.log('Textures:', JSON.stringify(tex));
+  
+  // Place buildings & spawn all
   await page.evaluate(() => {
     state.sides.red.credits = 99999;
     state.sides.blue.credits = 99999;
@@ -17,7 +29,6 @@ const { chromium } = require('playwright');
     placeBuildingOnMap('blue', 'barracks', 1700, 350, 100, 100);
     placeBuildingOnMap('blue', 'warfactory', 1700, 450, 100, 100);
     placeBuildingOnMap('blue', 'techcenter', 1700, 250, 100, 100);
-    // Spawn one of each unit type for both sides
     for (const side of ['red', 'blue']) {
       for (const t of ['rifleman', 'rocket', 'flame', 'sniper', 'fsv', 'tank', 'drone', 'heavy']) {
         spawnUnit(side, t);
@@ -26,8 +37,7 @@ const { chromium } = require('playwright');
   });
   await page.waitForTimeout(800);
   
-  // Take screenshot
-  await page.screenshot({ path: '/workspace/.test/v2_full.png' });
+  await page.screenshot({ path: '/workspace/.test/v3_full.png' });
   console.log('Screenshot saved');
   console.log('Units:', await page.evaluate(() => state.units.length));
   
