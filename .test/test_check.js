@@ -7,59 +7,44 @@ const { chromium } = require('playwright');
   await page.goto('http://localhost:8765/.test/index_test.html', { waitUntil: 'load' });
   await page.waitForTimeout(3000);
   
-  // Spawn a red rifleman
+  // Build everything and spawn everything
   const result = await page.evaluate(() => {
-    const s = game.scene.getScene('GameScene');
-    // Need a barracks for rifleman
     state.sides.red.credits = 99999;
-    // Build a barracks first
-    placeBuildingOnMap('red', 'barracks', 100, 300, 100, 100);
+    // Place buildings
+    placeBuildingOnMap('red', 'barracks', 100, 350, 100, 100);
+    placeBuildingOnMap('red', 'warfactory', 100, 450, 100, 100);
+    placeBuildingOnMap('red', 'techcenter', 100, 250, 100, 100);
+    placeBuildingOnMap('blue', 'barracks', 1700, 350, 100, 100);
+    placeBuildingOnMap('blue', 'warfactory', 1700, 450, 100, 100);
+    placeBuildingOnMap('blue', 'techcenter', 1700, 250, 100, 100);
+    // Spawn units
+    spawnUnit('red', 'rifleman');
+    spawnUnit('red', 'rifleman');
+    spawnUnit('red', 'rocket');
+    spawnUnit('red', 'flame');
+    spawnUnit('red', 'sniper');
+    spawnUnit('red', 'lighttank');
+    spawnUnit('red', 'tank');
+    spawnUnit('red', 'heavy');
+    spawnUnit('blue', 'rifleman');
+    spawnUnit('blue', 'rifleman');
+    spawnUnit('blue', 'rocket');
+    spawnUnit('blue', 'flame');
+    spawnUnit('blue', 'sniper');
+    spawnUnit('blue', 'lighttank');
+    spawnUnit('blue', 'tank');
+    spawnUnit('blue', 'heavy');
     return {
-      ok: true,
-      buildings: state.sides.red.buildings.length,
-    };
-  });
-  console.log('Build barracks:', JSON.stringify(result));
-  await page.waitForTimeout(500);
-  
-  // Now spawn
-  const result2 = await page.evaluate(() => {
-    const u = spawnUnit('red', 'rifleman');
-    return {
-      spawned: !!u,
+      redBuildings: state.sides.red.buildings.length,
+      blueBuildings: state.sides.blue.buildings.length,
       unitCount: state.units.length,
-      unit: state.units[0] ? { type: state.units[0].type, side: state.units[0].side, x: state.units[0].x, y: state.units[0].y } : null,
     };
   });
-  console.log('Spawn:', JSON.stringify(result2));
-  
+  console.log('Setup:', JSON.stringify(result));
   await page.waitForTimeout(500);
   
-  // Check sprite
-  const result3 = await page.evaluate(() => {
-    const u = state.units[0];
-    if (!u) return { error: 'no unit' };
-    // Find the sprite
-    const s = game.scene.getScene('GameScene');
-    const found = s.unitSprites.find(us => us.unit === u);
-    if (!found) return { error: 'no sprite found in unitSprites' };
-    return {
-      visible: found.sprite.visible,
-      alpha: found.sprite.alpha,
-      scaleX: found.sprite.scaleX,
-      scaleY: found.sprite.scaleY,
-      x: found.sprite.x,
-      y: found.sprite.y,
-      textureKey: found.sprite.texture ? found.sprite.texture.key : null,
-      width: found.sprite.width,
-      height: found.sprite.height,
-      hasTexture: !!found.sprite.texture,
-    };
-  });
-  console.log('Sprite:', JSON.stringify(result3, null, 2));
-  
-  await page.screenshot({ path: '/workspace/.test/unit_render.png' });
-  console.log('Screenshot saved to /workspace/.test/unit_render.png');
+  await page.screenshot({ path: '/workspace/.test/full_game.png' });
+  console.log('Screenshot saved');
   
   if (errors.length) console.log('Errors:', errors);
   await browser.close();
