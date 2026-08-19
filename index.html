@@ -1849,6 +1849,12 @@ class GameScene extends Phaser.Scene {
   }
 
   // Build a sprite for a unit object
+  // IMPORTANT: We use setScale (not setDisplaySize) for the base size,
+  // because syncUnits() calls setScale every frame. setDisplaySize sets
+  // a scale based on the texture's natural size, but setScale(1) would
+  // override that back to the natural 264x264 size. Using setScale for
+  // the base size means the spawn flash animation (which also uses
+  // setScale) can multiply from a known base.
   makeUnitSprite(unit) {
     const key = unit.type + '-' + unit.side;
     if (!this.textures.exists(key)) return null;
@@ -1856,10 +1862,12 @@ class GameScene extends Phaser.Scene {
     sprite.setOrigin(0.5, 0.55);
     const isTank = ['tank', 'lighttank', 'heavy'].includes(unit.type);
     const displaySize = isTank ? 56 : (unit.type === 'sniper' ? 48 : 44);
-    sprite.setDisplaySize(displaySize, displaySize);
+    // Each frame in the atlas is 264x264. Scale = displaySize / 264.
+    const baseScale = displaySize / 264;
+    sprite.setScale(baseScale);
     if (unit.side === 'blue') sprite.setFlipX(true);
     sprite.setDepth(unit.y);
-    return sprite;
+    return { sprite, baseScale };
   }
 
   makeBuildingSprite(bld) {
@@ -1869,21 +1877,24 @@ class GameScene extends Phaser.Scene {
     sprite.setOrigin(0.5, 0.65);
     let displaySize = 80;
     if (bld.type === 'barracks') displaySize = 88;
-    else if (bld.type === 'warfactory') displaySize = 92;
+    else if (bld.type === 'warfactory') displaySize = 96;
     else if (bld.type === 'techcenter') displaySize = 92;
-    sprite.setDisplaySize(displaySize, displaySize);
+    const baseScale = displaySize / 264;
+    sprite.setScale(baseScale);
     sprite.setDepth(bld.y);
-    return sprite;
+    return { sprite, baseScale };
   }
 
   makeTurretSprite(t) {
-    const key = t.type + '-' + t.side;
+    const key = t.type === 'pillbox' ? 'pillbox-' + t.side : 'turret-' + t.side;
     if (!this.textures.exists(key)) return null;
     const sprite = this.add.image(t.x, t.y, key);
     sprite.setOrigin(0.5, 0.65);
-    sprite.setDisplaySize(48, 48);
+    const displaySize = 48;
+    const baseScale = displaySize / 264;
+    sprite.setScale(baseScale);
     sprite.setDepth(t.y);
-    return sprite;
+    return { sprite, baseScale };
   }
 
   makeBaseSprite(side) {
@@ -1892,9 +1903,11 @@ class GameScene extends Phaser.Scene {
     const b = state.sides[side].base;
     const sprite = this.add.image(b.x, b.y, key);
     sprite.setOrigin(0.5, 0.6);
-    sprite.setDisplaySize(100, 100);
+    const displaySize = 100;
+    const baseScale = displaySize / 264;
+    sprite.setScale(baseScale);
     sprite.setDepth(b.y);
-    return sprite;
+    return { sprite, baseScale };
   }
 
   // Called by spawnUnit() — create a sprite for a newly-spawned unit
@@ -1902,25 +1915,25 @@ class GameScene extends Phaser.Scene {
     // The unit is already in state.units. Find it.
     const unit = state.units.find(u => u.side === side && u.x === x && u.y === y && u.type === unitKey);
     if (!unit) return;
-    const sprite = this.makeUnitSprite(unit);
-    if (sprite) {
-      this.unitSprites.push({ sprite, unit });
+    const result = this.makeUnitSprite(unit);
+    if (result) {
+      this.unitSprites.push({ sprite: result.sprite, unit, baseScale: result.baseScale });
     }
   }
 
   // Called by placeBuildingOnMap()
   addBuildingSprite(side, bld) {
-    const sprite = this.makeBuildingSprite(bld);
-    if (sprite) {
-      this.buildingSprites.push({ sprite, bld });
+    const result = this.makeBuildingSprite(bld);
+    if (result) {
+      this.buildingSprites.push({ sprite: result.sprite, bld, baseScale: result.baseScale });
     }
   }
 
   // Called by placeTurretOnMap()
   addTurretSprite(side, t) {
-    const sprite = this.makeTurretSprite(t);
-    if (sprite) {
-      this.turretSprites.push({ sprite, t });
+    const result = this.makeTurretSprite(t);
+    if (result) {
+      this.turretSprites.push({ sprite: result.sprite, t, baseScale: result.baseScale });
     }
   }
 
@@ -1957,9 +1970,9 @@ class GameScene extends Phaser.Scene {
     // Add sprites for new units
     for (const u of state.units) {
       if (!seenUnits.has(u)) {
-        const sprite = this.makeUnitSprite(u);
-        if (sprite) {
-          this.unitSprites.push({ sprite, unit: u });
+        const result = this.makeUnitSprite(u);
+        if (result) {
+          this.unitSprites.push({ sprite: result.sprite, unit: u, baseScale: result.baseScale });
         }
       }
     }
@@ -1969,12 +1982,16 @@ class GameScene extends Phaser.Scene {
       s.sprite.x = s.unit.x;
       s.sprite.y = s.unit.y;
       s.sprite.setDepth(s.unit.y);
+      // Use baseScale (set when sprite was created) so the sprite stays
+      // at the correct size even after setScale is called every frame.
+      // During spawn flash, scale up briefly.
+      const baseScale = s.baseScale || 0.167;
       if (s.unit.spawnFlash && s.unit.spawnFlash > 0) {
         const t = s.unit.spawnFlash / 0.3;
-        s.sprite.setScale(1 + (1 - t) * 0.5);
+        s.sprite.setScale(baseScale * (1 + (1 - t) * 0.5));
         s.sprite.setAlpha(0.5 + 0.5 * t);
       } else {
-        s.sprite.setScale(1);
+        s.sprite.setScale(baseScale);
         s.sprite.setAlpha(1);
       }
     }
@@ -2430,7 +2447,17 @@ function startPhaser() {
     parent: 'phaser-game',
     width: CFG.MAP_WIDTH,
     height: CFG.MAP_HEIGHT,
+    // backgroundColor is the WebGL clear color — what shows in
+    // areas where no sprite is drawn. The Phaser background
+    // sprite (drawn in makeBackground) covers the full 1920x600
+    // world, so this clear color is only seen briefly during load.
     backgroundColor: '#2a4a2a',
+    // Enable alpha so the canvas itself can be transparent.
+    // We don't rely on this for sprite transparency (sprites
+    // have their own alpha channel), but it prevents the
+    // browser from showing a white background through the
+    // canvas before Phaser has drawn anything.
+    alpha: true,
     // Phaser's Scale.FIT was unreliable on mobile — the canvas
     // was overflowing the container. We use Scale.NONE (fixed
     // 1920x600 game) and let fitCanvasToContainer() size the
