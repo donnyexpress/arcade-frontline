@@ -32,10 +32,10 @@
     background: #2a4a2a;
   }
   /* Phaser creates a canvas with intrinsic size 1920x600 inside
-     #phaser-game. We use the classic "object-fit: contain" CSS
-     pattern to scale the canvas to fit the container while
-     preserving its 1920x600 aspect ratio. This is more reliable
-     than Phaser's Scale.FIT mode for mobile. */
+     #phaser-game. We use JavaScript (fitCanvasToContainer) to size
+     the canvas to fit its container while preserving aspect ratio.
+     This is more reliable than CSS max-width/max-height which
+     can interact badly with the canvas's intrinsic dimensions. */
   #phaser-game {
     flex: 1 1 auto;
     width: 100%;
@@ -45,20 +45,8 @@
   }
   #phaser-game canvas {
     display: block;
-    /* Intrinsic size is 1920x600 (set by Phaser). We want it to
-       scale down to fit the container while keeping aspect ratio. */
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    /* Center the canvas in its container */
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    /* Improve rendering quality when scaled */
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
+    /* width/height/left/top are set by JavaScript */
   }
   /* Top HUD */
   #hud {
@@ -2331,6 +2319,41 @@ buildUnitButtons();
 // ============================================================
 // PHASER BOOTSTRAP
 // ============================================================
+
+// Explicit canvas sizing — the most reliable way to fit a fixed-size
+// game canvas into a container while preserving aspect ratio.
+// The canvas has intrinsic size 1920x600 (set by Phaser). We compute
+// the largest size that fits in the container and center it.
+function fitCanvasToContainer() {
+  const container = document.getElementById('phaser-game');
+  if (!container) return;
+  const canvas = container.querySelector('canvas');
+  if (!canvas) return;
+  const containerW = container.clientWidth;
+  const containerH = container.clientHeight;
+  if (containerW === 0 || containerH === 0) return;
+  // Use the canvas's actual intrinsic size (canvas.width / canvas.height)
+  // rather than hardcoding 1920/600, so this works for any game size.
+  const canvasW = canvas.width;
+  const canvasH = canvas.height;
+  const canvasAspect = canvasW / canvasH;
+  const containerAspect = containerW / containerH;
+  let displayW, displayH;
+  if (containerAspect > canvasAspect) {
+    // Container is wider than canvas — fit by height, letterbox sides
+    displayH = containerH;
+    displayW = displayH * canvasAspect;
+  } else {
+    // Container is taller than canvas — fit by width, letterbox top/bottom
+    displayW = containerW;
+    displayH = displayW / canvasAspect;
+  }
+  canvas.style.width = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+  canvas.style.left = ((containerW - displayW) / 2) + 'px';
+  canvas.style.top = ((containerH - displayH) / 2) + 'px';
+}
+
 function startPhaser() {
   const config = {
     type: Phaser.AUTO,
@@ -2339,10 +2362,11 @@ function startPhaser() {
     height: CFG.MAP_HEIGHT,
     backgroundColor: '#2a4a2a',
     // Phaser's Scale.FIT was unreliable on mobile — the canvas
-    // was overflowing the container. Instead we use Scale.NONE
-    // (fixed 1920x600 game) and let CSS scale the canvas element
-    // to fit the container via max-width/max-height. This is the
-    // classic "object-fit: contain" pattern, more reliable cross-browser.
+    // was overflowing the container. We use Scale.NONE (fixed
+    // 1920x600 game) and let fitCanvasToContainer() size the
+    // canvas element to fit its parent. This is the most reliable
+    // approach: JS computes the largest size that fits, sets CSS
+    // width/height/left/top, and centers the canvas.
     scale: {
       mode: Phaser.Scale.NONE,
       autoCenter: Phaser.Scale.NO_CENTER,
@@ -2352,6 +2376,14 @@ function startPhaser() {
   game = new Phaser.Game(config);
   game.events.once('ready', () => {
     scene = game.scene.getScene('GameScene');
+  });
+  // Run once Phaser has created the canvas, and on every resize.
+  // Small delay to let the canvas be inserted into the DOM.
+  setTimeout(fitCanvasToContainer, 50);
+  setTimeout(fitCanvasToContainer, 200);
+  window.addEventListener('resize', fitCanvasToContainer);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(fitCanvasToContainer, 100);
   });
 }
 
