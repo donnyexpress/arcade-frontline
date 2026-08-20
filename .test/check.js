@@ -1,0 +1,15 @@
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true, executablePath: '/root/.cache/ms-playwright/chromium-1223/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const page = await browser.newPage();
+  await page.goto('http://localhost:8765/.test/index_test.html?_t=' + Date.now(), { waitUntil: 'load' });
+  await page.waitForTimeout(8000);
+  // Try to access state from window
+  const r = await page.evaluate(() => ({
+    winState: typeof window.state,
+    evalState: typeof state,
+    hasGame: typeof game !== 'undefined',
+  }));
+  console.log(JSON.stringify(r));
+  await browser.close();
+})().catch(e => console.error('E:', e.message));
