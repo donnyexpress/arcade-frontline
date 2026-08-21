@@ -1,0 +1,63 @@
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true, executablePath: '/root/.cache/ms-playwright/chromium-1234/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  await page.goto('file:///workspace/.test/index_test.html');
+  await page.waitForTimeout(3000);
+  
+  await page.evaluate(() => { state.sides.red.credits = 1000; placeBuilding('red', 'barracks'); });
+  await page.evaluate(() => {
+    for (let j = 0; j < 60; j++) {
+      const dt = 0.1;
+      state.sides.red.credits = Math.min(CFG.SOFT_CAP, state.sides.red.credits + CFG.PASSIVE_INCOME * dt);
+      state.sides.blue.credits = Math.min(CFG.SOFT_CAP, state.sides.blue.credits + CFG.PASSIVE_INCOME * dt);
+      autoAIBuild('red');
+      autoAIBuild('blue');
+      updateBuildings('red', dt);
+      updateBuildings('blue', dt);
+      updateTurrets('red', dt);
+      updateTurrets('blue', dt);
+      updateQueue('red', dt);
+      updateQueue('blue', dt);
+      updateAI(dt);
+      for (const u of state.units) updateUnit(u, dt);
+      state.units = state.units.filter(u => u.hp > 0);
+      state.time += dt;
+    }
+  });
+  
+  await page.evaluate(() => {
+    state.sides.red.credits = 5000;
+    for (let i = 0; i < 3; i++) placeTurret('red', 'pillbox');
+  });
+  await page.evaluate(() => {
+    for (let j = 0; j < 50; j++) {
+      const dt = 0.1;
+      state.sides.red.credits = Math.min(CFG.SOFT_CAP, state.sides.red.credits + CFG.PASSIVE_INCOME * dt);
+      state.sides.blue.credits = Math.min(CFG.SOFT_CAP, state.sides.blue.credits + CFG.PASSIVE_INCOME * dt);
+      autoAIBuild('red');
+      autoAIBuild('blue');
+      updateBuildings('red', dt);
+      updateBuildings('blue', dt);
+      updateTurrets('red', dt);
+      updateTurrets('blue', dt);
+      updateQueue('red', dt);
+      updateQueue('blue', dt);
+      updateAI(dt);
+      for (const u of state.units) updateUnit(u, dt);
+      state.units = state.units.filter(u => u.hp > 0);
+      state.time += dt;
+    }
+  });
+  
+  const positions = await page.evaluate(() => {
+    return state.sides.red.turrets.map(t => {
+      const s = worldToScreen(t.x, t.y);
+      return {world: {x: t.x, y: t.y}, screen: {x: Math.floor(s.x), y: Math.floor(s.y)}, visible: t.type};
+    });
+  });
+  console.log('Turret positions:', JSON.stringify(positions, null, 2));
+  
+  await page.screenshot({ path: '/workspace/.test/v57_full.png' });
+  await browser.close();
+})();
