@@ -1,0 +1,39 @@
+R+1s: {"time":"1.12","credits":206,"buildings":0,"units":0,"frameRate":22} stuck=0
+R+2s: {"time":"1.37","credits":208,"buildings":0,"units":0,"frameRate":18} stuck=0
+R+3s: {"time":"1.62","credits":209,"buildings":0,"units":0,"frameRate":15} stuck=0
+R+4s: {"time":"1.87","credits":211,"buildings":0,"units":0,"frameRate":12} stuck=0
+R+5s: {"time":"2.12","credits":212,"buildings":0,"units":0,"frameRate":10} stuck=0
+R+6s: {"time":"2.37","credits":214,"buildings":0,"units":0,"frameRate":9} stuck=0
+R+7s: {"time":"2.62","credits":215,"buildings":0,"units":0,"frameRate":8} stuck=0
+R+8s: {"time":"2.87","credits":217,"buildings":0,"units":0,"frameRate":7} stuck=0
+R+9s: {"time":"3.12","credits":218,"buildings":0,"units":0,"frameRate":7} stuck=0
+R+10s: {"time":"3.37","credits":220,"buildings":0,"units":0,"frameRate":6} stuck=0
+R+11s: {"time":"3.62","credits":221,"buildings":0,"units":0,"frameRate":6} stuck=0
+R+12s: {"time":"3.87","credits":223,"buildings":0,"units":0,"frameRate":6} stuck=0
+R+13s: {"time":"4.12","credits":224,"buildings":0,"units":0,"frameRate":6} stuck=0
+R+14s: {"time":"4.37","credits":226,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+15s: {"time":"4.62","credits":227,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+16s: {"time":"4.87","credits":229,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+17s: {"time":"5.12","credits":230,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+18s: {"time":"5.37","credits":232,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+19s: {"time":"5.62","credits":233,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+20s: {"time":"5.87","credits":235,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+21s: {"time":"6.12","credits":236,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+22s: {"time":"6.37","credits":238,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+23s: {"time":"6.62","credits":239,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+24s: {"time":"6.87","credits":241,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+25s: {"time":"7.12","credits":242,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+26s: {"time":"7.37","credits":244,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+27s: {"time":"7.62","credits":245,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+28s: {"time":"7.77","credits":246,"buildings":0,"units":0,"frameRate":5} stuck=0
+R+29s: {"time":"7.97","credits":247,"buildings":0,"units":0,"frameRate":4} stuck=0
+R+30s: {"time":"8.12","credits":248,"buildings":0,"units":0,"frameRate":4} stuck=0
+
+--- Page errors ---
+
+
+--- Console errors/warnings ---
+CONS_WARN: [.WebGL-0x2d9400117600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+CONS_WARN: [.WebGL-0x2d9400117600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+CONS_WARN: [.WebGL-0x2d9400117600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+CONS_WARN: [.WebGL-0x2d9400117600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)

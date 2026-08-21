@@ -1,0 +1,24 @@
+=== STEP 1: Initial state ===
+{"time":"0.27","redCredits":201,"blueCredits":201,"redBuildings":0,"blueBuildings":0,"redQueue":0,"units":0}
+
+=== STEP 2: Place barracks, war factory, tech center ===
+{"r1":true,"r2":false,"r3":false,"queue":["barracks"]}
+
+=== STEP 3: After 2s - should be building ===
+{"time":"0.52","buildings":0,"queue":[{"type":"barracks","progress":"0.20"}],"credits":500}
+
+=== STEP 4: After 10s - buildings should be complete ===
+{"time":"2.02","buildings":[],"queue":1,"credits":500}
+
+=== STEP 5: Queue all unit types ===
+{"results":{},"queue":["rifleman","rocket","sniper","flame"]}
+
+=== STEP 6: After 8s - units should be produced ===
+{"time":"3.77","units":1,"redUnits":1,"blueUnits":0,"redQueue":3,"redBuildings":0,"blueBuildings":0,"unitTypes":["red:rifleman:20"]}
+
+=== STEP 7: Wait for combat ===
+{"time":"7.37","units":2,"redUnits":2,"blueUnits":0,"redBaseHP":500,"blueBaseHP":500,"redCredits":500,"blueCredits":244}
+
+=== ERRORS ===
+
+DONE

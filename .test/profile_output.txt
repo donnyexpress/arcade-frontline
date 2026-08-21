@@ -1,0 +1,7 @@
+PROFILE: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":374}
+PROFILE: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":748}
+PROFILE: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":1088}
+PROFILE: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":1445}
+PROFILE: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":1785}
+PROFILE: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":2159}
+Final profile: {"frameTime":0,"getImageData":0,"drawImage":0,"putImageData":0,"offsetWidth":0,"textContent":2499}

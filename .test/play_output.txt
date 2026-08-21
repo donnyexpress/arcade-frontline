@@ -1,0 +1,18 @@
+Player placed barracks
+T+1s: {"time":"0.87","redBuildings":0,"redQueue":0,"redUnits":0,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+T+4s: {"time":"2.97","redBuildings":0,"redQueue":3,"redUnits":0,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+T+7s: {"time":"5.37","redBuildings":1,"redQueue":4,"redUnits":0,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+T+10s: {"time":"7.77","redBuildings":1,"redQueue":4,"redUnits":1,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+T+13s: {"time":"10.17","redBuildings":1,"redQueue":4,"redUnits":2,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+T+16s: {"time":"12.57","redBuildings":1,"redQueue":4,"redUnits":2,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+T+19s: {"time":"14.97","redBuildings":1,"redQueue":4,"redUnits":3,"blueBuildings":0,"blueQueue":0,"blueUnits":0}
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.evaluate: Target page, context or browser has been closed
+    at /run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/.test/test_full_play.js:45:16 {
+  log: []
+}
+
+Node.js v22.19.0

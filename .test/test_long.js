@@ -1,23 +1,31 @@
 const { chromium } = require('playwright');
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: '/root/.cache/ms-playwright/chromium-1223/chrome-linux/chrome', args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ headless: true, executablePath: '/root/.cache/ms-playwright/chromium-1234/chrome-linux/chrome', args: ['--no-sandbox'] });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-  page.on('pageerror', e => console.log('ERR:', e.message));
-  await page.goto('http://localhost:8765/.test/index_test.html', { waitUntil: 'load' });
+  let errors = [];
+  page.on('pageerror', e => errors.push('ERR: ' + e.message));
+  await page.goto('file:///workspace/.test/index_test.html');
   await page.waitForTimeout(3000);
   
-  // Give credits and build
-  await page.evaluate(() => { state.sides.red.credits = 500; });
-  await page.click('#btn-barracks');
-  await page.waitForTimeout(5500);
-  for (let i = 0; i < 5; i++) {
-    await page.click('#unit-rifleman');
-    await page.waitForTimeout(250);
-  }
-  await page.waitForTimeout(8000);
+  // Set credits, place barracks
+  await page.evaluate(() => {
+    state.sides.red.credits = 9999;
+    placeBuilding('red', 'barracks');
+  });
   
-  await page.screenshot({ path: '/workspace/.test/game_units_walking.png' });
-  const state = await page.evaluate(() => ({units: game.scene.getScene('GameScene').unitSprites.length}));
-  console.log('State:', state);
+  // Wait for the game to advance enough for the building to complete
+  // Use page.waitForFunction to wait until the building appears
+  await page.waitForFunction(() => state.sides.red.buildings.length > 0, { timeout: 60000 });
+  
+  const t = await page.evaluate(() => ({
+    time: state.time.toFixed(2),
+    buildings: state.sides.red.buildings.map(b => ({type: b.type, x: Math.floor(b.x), y: Math.floor(b.y), hp: b.hp, maxHp: b.maxHp, constructing: b.constructing})),
+    buildingSprites: scene.buildingSprites.map(s => ({bldType: s.bld.type, x: Math.floor(s.sprite.x), y: Math.floor(s.sprite.y), visible: s.sprite.visible, alpha: s.sprite.alpha, scale: s.sprite.scaleX})),
+    baseRed: {x: state.sides.red.base.x, y: state.sides.red.base.y}
+  }));
+  console.log('Building info:', JSON.stringify(t, null, 2));
+  
+  await page.screenshot({ path: '/workspace/.test/v49_built.png' });
+  console.log('Errors:', errors.slice(0, 5));
   await browser.close();
-})().catch(e => console.error(e));
+})();

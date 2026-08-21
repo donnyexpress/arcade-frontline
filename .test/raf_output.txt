@@ -1,0 +1,5 @@
+RAF in last 5s: 44 fps: 8.2 gameFps: 12
+RAF in last 5s: 44 fps: 8.6 gameFps: 7
+RAF in last 5s: 40 fps: 8.6 gameFps: 6
+RAF in last 5s: 44 fps: 8.6 gameFps: 5
+RAF in last 5s: 44 fps: 8.5 gameFps: 5

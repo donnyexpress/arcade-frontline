@@ -1,0 +1,5 @@
+Scene updates in last 5s: 0 avg time: NaN ms rate: 0.0 /s
+Scene updates in last 5s: 0 avg time: NaN ms rate: 0.0 /s
+Scene updates in last 5s: 0 avg time: NaN ms rate: 0.0 /s
+Scene updates in last 5s: 0 avg time: NaN ms rate: 0.0 /s
+Scene updates in last 5s: 0 avg time: NaN ms rate: 0.0 /s
