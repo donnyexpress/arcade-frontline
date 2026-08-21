@@ -1,0 +1,2 @@
+Before test 9: {"time":102.76599999999836,"blueBuildings":2,"blueBuildQueue":0}
+After test 9: {"time":163.36599999999493,"blueBuildings":0,"blueBuildQueue":0,"blueQueue":0}

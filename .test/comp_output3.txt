@@ -1,0 +1,111 @@
+
+═══ TEST 1: Initial state ═══
+✅ Game starts near time 0
+✅ Player has enough credits for barracks (got 203)
+✅ Player has enough credits for barracks + buffer (got 203)
+✅ Player starts with no buildings
+✅ No units at start
+✅ No queued units at start
+✅ Base HP is 500 (got 500)
+
+═══ TEST 2: Place barracks ═══
+✅ Barracks is in build queue
+✅ Credits deducted for barracks
+✅ Barracks is on map after 6s
+✅ Barracks has HP
+
+═══ TEST 3: All barracks units ═══
+✅ Can queue rifleman
+✅ Can queue rocket
+✅ Can queue flame
+✅ rifleman was produced and exists on map
+✅ rocket was produced and exists on map
+✅ flame was produced and exists on map
+
+═══ TEST 4: Place war factory ═══
+✅ Can place war factory after barracks
+✅ War factory is on map
+
+═══ TEST 5: Vehicle units from war factory ═══
+✅ Can queue fsv
+✅ Can queue tank
+❌ fsv was produced
+✅ tank was produced
+
+═══ TEST 6: Place tech center ═══
+✅ Can place tech center after war factory
+✅ Tech center on map
+
+═══ TEST 7: Advanced units (sniper, drone, heavy) ═══
+✅ Can queue sniper
+✅ Can queue drone
+✅ Can queue heavy
+✅ sniper was produced
+❌ drone was produced
+✅ heavy was produced
+
+═══ TEST 8: Defensive structures ═══
+✅ Can place pillbox
+✅ Can place turret
+✅ Both turrets placed (got 2)
+
+═══ TEST 9: AI behavior ═══
+❌ AI has buildings (0)
+❌ AI has at least barracks or war factory
+  AI built 0 units so far
+❌ AI is producing units
+
+═══ TEST 10: Combat between red and blue ═══
+  2 units alive after combat
+  1 units damaged
+✅ Combat happened (alive: 2, damaged: 1)
+
+═══ TEST 11: Building destruction ═══
+✅ Dead building removed
+
+═══ TEST 12: Unit death ═══
+✅ Dead units removed (1 removed)
+
+═══ TEST 13: Credit cap ═══
+✅ Credits capped near 500 (got 500)
+
+═══ TEST 14: Queue limit ═══
+✅ Queue respects MAX_QUEUE (0 <= 5)
+
+═══ TEST 15: Build queue limit ═══
+✅ Build queue respects MAX_BUILDINGS (10 <= 10)
+
+═══ TEST 16: Match end conditions ═══
+✅ Match ends when base HP is 0
+❌ Blue wins when red base destroyed
+
+═══ TEST 17: Building prereq ═══
+✅ Cannot place war factory without barracks
+
+═══ TEST 18: Building cost deduction ═══
+❌ Cost deducted (100 → 100)
+
+═══ TEST 19: Cancel build (refund) ═══
+✅ Cancel mechanic exists (manual verification needed)
+
+═══ TEST 20: Match time limit ═══
+✅ Match ends after MATCH_TIME
+
+═══ TEST 21: No errors ═══
+  Page errors: 0
+  Console errors: 0
+✅ No page errors
+✅ No console errors
+
+═══════════════════════════════════
+PASSED: 44
+FAILED: 7
+
+Failed tests:
+  - fsv was produced
+  - drone was produced
+  - AI has buildings (0)
+  - AI has at least barracks or war factory
+  - AI is producing units
+  - Blue wins when red base destroyed
+  - Cost deducted (100 → 100)
