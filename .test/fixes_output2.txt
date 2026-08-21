@@ -1,0 +1,28 @@
+
+═══ FIX 1: Click handler rejects locked buttons ═══
+✅ rifleman button is locked without barracks
+✅ rifleman is not unlocked
+✅ Locked button click does not queue unit
+✅ rifleman unlocks after barracks built
+✅ Unlocked button click does queue unit
+
+═══ FIX 2: Health bars are visible on damaged units ═══
+  Tank health bar: {"hasHealthBar":true,"healthBarVisible":true,"hasBarFg":true}
+✅ Tank sprite has healthBar
+✅ Health bar visible on damaged unit
+✅ Tank has barFg
+
+═══ FIX 3: Drone suicide-AoE behavior ═══
+  Before: {"blueTotalHP":0}
+  After: {"blueTotalHP":0}
+✅ Red drone self-destructs
+❌ Blue units took AoE damage (0 → 0)
+
+═══ FIX 4: Drone alone does not self-destruct ═══
+  Drone alone: 15 → 15
+✅ Drone alone does not explode
+
+═══════════════════════════════════
+PASSED: 10
+FAILED: 1
+JS errors: 0
