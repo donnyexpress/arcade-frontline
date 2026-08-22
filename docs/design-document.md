@@ -55,10 +55,10 @@
 
 ### 2 Defensive Structures (no tier)
 
-| Structure | Cost | HP | Behavior |
-|---|---|---|---|
-| Pillbox | 75 | 120 | Static, attacks nearest enemy |
-| Turret | 100 | 200 | Tracks enemies, smart targeting |
+| Structure | Cost | HP | Damage | Range | Behavior |
+|---|---|---|---|---|---|
+| Pillbox | 75 | 120 | 12 | 250 px | Static, attacks nearest enemy |
+| Turret | 150 | 200 | 22 | 350 px | Tracks enemies, smart targeting |
 
 **See:** [`decisions/building-prerequisites.md`](decisions/building-prerequisites.md)
 
@@ -70,19 +70,26 @@
 
 | Unit | Cost | HP | Damage | Range | Speed | Special |
 |---|---|---|---|---|---|---|
-| Rifleman | 10 | 20 | 8 | 80 | 0.6 | cheap, fast |
-| Rocket Soldier | 25 | 25 | 18 | 120 | 0.5 | splash damage |
-| Flamethrower | 30 | 30 | 12 | 60 | 0.5 | cone attack |
-| Sniper | 35 | 18 | 30 | 200 | 0.4 | long range, low HP |
-| Drone | 40 | 15 | 50 (AoE) | 50 | 0.8 | suicide at target, 60px radius |
+| Rifleman | 10 | 20 | 4 | 60 | 90 px/s | cheap, fast |
+| Rocket Soldier | 25 | 20 | 12 | 200 | 60 px/s | splash damage |
+| Flamethrower | 30 | 35 | 18 | 100 | 55 px/s | cone attack |
+| Sniper | 50 | 25 | 30 | 400 | 40 px/s | long range, low HP |
 
 ### Vehicles (from War Factory + Tech Center)
 
 | Unit | Cost | HP | Damage | Range | Speed | Special |
 |---|---|---|---|---|---|---|
-| FSV (HUMVEE) | 35 | 60 | 12 | 100 | 1.0 | scout, fast |
-| Medium Tank | 60 | 100 | 25 | 100 | 0.6 | balanced |
-| Heavy Tank | 100 | 200 | 40 | 110 | 0.4 | slow, tanky |
+| FSV (HUMVEE) | 35 | 50 | 12 | 120 | 95 px/s | scout, fast |
+| Medium Tank | 40 | 80 | 15 | 140 | 45 px/s | balanced |
+| Heavy Tank | 80 | 180 | 22 | 140 | 30 px/s | slow, tanky |
+
+> **Stats source:** `CFG.UNITS` in `index.html`. See [`architecture/tuning-numbers.md`](architecture/tuning-numbers.md) for the canonical reference.
+
+### Drone (Tech Center)
+
+| Unit | Cost | HP | Damage | Range | Speed | Special |
+|---|---|---|---|---|---|---|
+| Drone | 60 | 15 | 50 (AoE) | 80 | 110 px/s | suicide at target, 60px radius, 50% falloff |
 
 ---
 
@@ -93,6 +100,8 @@
 | Starting credits | 200 | Can build barracks immediately |
 | Passive income | 6/s | +1/s per production building |
 | Soft cap | 500 | Excess rolls over but feels wasteful |
+| Match time | 180s (3 min) | `MATCH_TIME` |
+| Kill bounty | 25% of unit cost | `KILL_BOUNTY` |
 | Refund on cancel | 50% | RA2 convention |
 | Refund on destroy | 50% | For queued units when bld destroyed |
 

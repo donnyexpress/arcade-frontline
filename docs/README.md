@@ -28,6 +28,14 @@ docs/
 │   ├── 0005-prompt-history-tracking.md
 │   └── TEMPLATE.md
 │
+├── architecture/              ← Software architecture model
+│   ├── README.md              (navigation index)
+│   ├── overview.md            (5-layer model, data flow)
+│   └── tuning-numbers.md      (every CFG constant documented)
+│
+├── audit/                     ← Doc-code consistency audits
+│   └── 2026-08-22-doc-code-audit.md
+│
 ├── decisions/                 ← Game design decisions (one per topic)
 │   ├── unit-roster.md
 │   ├── building-prerequisites.md
@@ -65,6 +73,9 @@ docs/
 - "Why are turrets in a perimeter arc?" → [`decisions/targeting-priority.md`](decisions/targeting-priority.md)
 - "Why Phaser 3 instead of PixiJS?" → [`adr/0002-phaser-over-canvas2d.md`](adr/0002-phaser-over-canvas2d.md)
 - "What was the original AI prompt for units?" → [`ai-prompts/unit-grid.md`](ai-prompts/unit-grid.md)
+- "What's the balance for rifleman?" → [`architecture/tuning-numbers.md#unit-roster-8-units`](architecture/tuning-numbers.md)
+- "How do I navigate the code?" → [`architecture/overview.md`](architecture/overview.md)
+- "Are the docs in sync with the code?" → [`audit/2026-08-22-doc-code-audit.md`](audit/2026-08-22-doc-code-audit.md)
 
 ### For decision making
 - New design decision? → Use [`adr/TEMPLATE.md`](adr/TEMPLATE.md)
