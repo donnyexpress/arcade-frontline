@@ -238,6 +238,30 @@ async function main() {
   assert(queueMax.queueLen === maxQueue, `Queue respects MAX_QUEUE (${queueMax.queueLen} === ${maxQueue})`);
   assert(queueMax.added === undefined, 'queueUnit returns undefined when queue full');
 
+  // Click handler should NOT double-deduct
+  // Simulates what the click handler does: validate + queueUnit()
+  // Bug fix 2026-08-30: previously the click handler also deducted credits,
+  // causing the player to be charged 2x per unit.
+  const clickHandlerTest = await page.evaluate(() => {
+    state = newState();
+    state.sides.red.buildings.push({ type: 'barracks', constructing: false, hp: 80 });
+    const before = state.sides.red.credits;
+    const def = CFG.UNITS.rifleman;
+    // This is the click handler logic (post-fix)
+    if (!isUnitUnlocked('red', 'rifleman')) return { error: 'not unlocked' };
+    if (state.sides.red.queue.length >= CFG.MAX_QUEUE) return { error: 'queue full' };
+    if (state.sides.red.credits < def.cost) return { error: 'no money' };
+    queueUnit('red', 'rifleman');  // queueUnit deducts internally
+    return {
+      before,
+      after: state.sides.red.credits,
+      queueLen: state.sides.red.queue.length,
+    };
+  });
+  assert(clickHandlerTest.after === clickHandlerTest.before - 10,
+    `Click handler deducts ONCE: ${clickHandlerTest.before} → ${clickHandlerTest.after} (expected ${clickHandlerTest.before - 10})`);
+  assert(clickHandlerTest.queueLen === 1, 'Click handler adds 1 unit to queue');
+
   // isUnitUnlocked requires active building
   const isUnlocked = await page.evaluate(() => {
     state = newState();

@@ -3089,7 +3089,8 @@ rightCol.addEventListener('pointerup', (e) => {
   if (!isUnitUnlocked('red', ctx.key)) { flashElement(ctx.btn, 'denied'); return; }
   if (state.sides.red.queue.length >= CFG.MAX_QUEUE) { flashElement(ctx.btn, 'denied'); return; }
   if (state.sides.red.credits < def.cost) { flashElement(ctx.btn, 'denied'); return; }
-  state.sides.red.credits -= def.cost;
+  // Bug fix 2026-08-30: queueUnit deducts credits internally, so don't
+  // double-deduct here. The previous code charged twice per click.
   queueUnit('red', ctx.key);
 });
 
