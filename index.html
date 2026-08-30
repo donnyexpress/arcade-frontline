@@ -1504,7 +1504,13 @@ function spawnUnit(side, unitKey) {
 function queueUnit(side, unitKey) {
   const sideData = state.sides[side];
   if (sideData.queue.length >= CFG.MAX_QUEUE) return;
+  if (!isUnitUnlocked(side, unitKey)) return;
   const def = CFG.UNITS[unitKey];
+  if (!def) return;
+  // Bug fix 2026-08-30: queueUnit was not deducting credits, allowing
+  // unlimited free unit production. Now matches placeBuilding pattern.
+  if (sideData.credits < def.cost) return;
+  sideData.credits -= def.cost;
   const totalTime = def.build / getProdMult(side);
   sideData.queue.push({ unit: unitKey, progress: 0, totalTime });
 }
@@ -2097,15 +2103,12 @@ function updateAI(dt) {
     return;
   }
 
-  // AI should produce units when barracks is active and there's money,
-  // BUT pause if it needs to save for war factory (a critical building).
-  const aiSavingForWarFactory = hasActiveBarracks && !hasActiveWarfactory && blueCreds < CFG.WARFACTORY_COST;
-  const aiSavingForTechCenter = hasActiveWarfactory && !hasActiveTechCenter && blueCreds < CFG.TECHCENTER_COST;
-  // Only produce units if we have enough buffer above the next building cost
-  const minCreditsForUnit = aiSavingForWarFactory ? CFG.WARFACTORY_COST
-                          : aiSavingForTechCenter ? CFG.TECHCENTER_COST
-                          : CFG.UNITS.rifleman.cost;
-  if (hasActiveBarracks && blueCreds >= minCreditsForUnit + CFG.UNITS.rifleman.cost && blue.queue.length < CFG.MAX_QUEUE) {
+  // AI should produce units when barracks is active and there's money.
+  // Bug fix 2026-08-30: original logic was "save for next building" which caused
+  // a deadlock - AI would save for war factory (150) but need 160 to queue
+  // a unit, so it could never queue. Now: always queue units if affordable,
+  // and the building AI runs separately.
+  if (hasActiveBarracks && blueCreds >= CFG.UNITS.rifleman.cost && blue.queue.length < CFG.MAX_QUEUE) {
     // Pick the best unit to produce
     let choice = null;
     if (playerTanks >= 1 && blueCreds >= CFG.UNITS.rocket.cost) choice = 'rocket';
