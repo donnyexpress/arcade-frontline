@@ -2041,6 +2041,10 @@ function updateAI(dt) {
   const hasActiveWarfactory = blue.buildings.some(b => !b.constructing && b.type === 'warfactory');
   const activeCount = blue.buildings.filter(b => !b.constructing).length;
   const totalCount = blue.buildings.length;
+  // Count pillboxes (defense turrets) — defense-first AI builds 2 before barracks.
+  // Includes both finished turrets and ones in the queue.
+  const pillboxCount = blue.turrets.filter(t => t.type === 'pillbox').length +
+                       blue.turretQueue.filter(q => q.type === 'pillbox').length;
 
   const playerUnits = state.units.filter(u => u.side === 'red' && u.hp > 0);
   const playerTanks = playerUnits.filter(u => u.type === 'tank' || u.type === 'heavy').length;
@@ -2090,7 +2094,31 @@ function updateAI(dt) {
     placeBuilding('blue', 'techcenter');
     return;
   }
-  if (t >= 10 && !hasActiveBarracks && blueCreds >= CFG.BARRACKS_COST && totalCount < CFG.MAX_BUILDINGS) {
+  // ────────────────────────────────────────────────────────
+  // DEFENSE-FIRST (added 2026-08-31): build pillbox before barracks
+  // Pillbox is cheap (75), builds in 4s, range 250 vs rifleman 60.
+  // 2 pillboxes shred a small rush. AI builds 2 before any barracks.
+  // ────────────────────────────────────────────────────────
+  // t >= 5: build first pillbox (defense) — even cheaper than barracks (100)
+  if (t >= 5 && pillboxCount === 0 && blueCreds >= CFG.PILLBOX_COST &&
+      blue.turretQueue.length < CFG.MAX_TURRET_SLOTS) {
+    placeTurret('blue', 'pillbox');
+    return;
+  }
+  // t >= 12: build second pillbox once we have 1 (or it's queued)
+  if (pillboxCount === 1 && t >= 12 && blueCreds >= CFG.PILLBOX_COST &&
+      blue.turretQueue.length < CFG.MAX_TURRET_SLOTS) {
+    placeTurret('blue', 'pillbox');
+    return;
+  }
+  // t >= 15: build barracks once we have 2 pillboxes
+  if (pillboxCount >= 2 && t >= 15 && !hasActiveBarracks && blueCreds >= CFG.BARRACKS_COST && totalCount < CFG.MAX_BUILDINGS) {
+    placeBuilding('blue', 'barracks');
+    return;
+  }
+  // Fallback: if we don't have barracks and time has advanced enough, allow it
+  // (This catches rematch scenarios where pillboxes were lost in the previous match.)
+  if (t >= 20 && !hasActiveBarracks && blueCreds >= CFG.BARRACKS_COST && totalCount < CFG.MAX_BUILDINGS) {
     placeBuilding('blue', 'barracks');
     return;
   }

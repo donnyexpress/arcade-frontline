@@ -318,16 +318,75 @@ async function main() {
   });
   assert(aiMax === 0, 'AI does not build at MAX_BUILDINGS');
 
-  // AI builds barracks when affordable (via updateAI, not autoAIBuild)
-  const aiBuilds = await page.evaluate(() => {
+  // Defense-first: AI builds pillbox first, not barracks (added 2026-08-31)
+  // t=5: pillbox #1 (75 credits)
+  // t=12: pillbox #2
+  // t=15: barracks (100 credits)
+
+  // t=5: AI builds pillbox (defense first)
+  const aiPillbox1 = await page.evaluate(() => {
     state = newState();
     state.sides.blue.credits = 200;
-    state.time = 11; // AI builds after t=10
-    state.aiNextDecision = 0; // Force AI to decide now
-    updateAI(0); // AI decision happens here, not in autoAIBuild
-    return state.sides.blue.buildingQueue.some(q => q.type === 'barracks');
+    state.time = 6;
+    state.aiNextDecision = 0;
+    updateAI(0);
+    return {
+      hasPillbox: state.sides.blue.turretQueue.some(q => q.type === 'pillbox'),
+      hasBarracks: state.sides.blue.buildingQueue.some(q => q.type === 'barracks'),
+      credits: state.sides.blue.credits,
+    };
   });
-  assert(aiBuilds === true, 'AI builds barracks when affordable after t=10');
+  assert(aiPillbox1.hasPillbox === true, 'AI builds pillbox first at t=5 (defense-first)');
+  assert(aiPillbox1.hasBarracks === false, 'AI does NOT build barracks before pillbox at t=5');
+
+  // t=11: AI should have 1 pillbox, not build #2 yet (gated by t>=12)
+  const aiAt11 = await page.evaluate(() => {
+    state = newState();
+    state.sides.blue.credits = 500;
+    // Place 1 pillbox already
+    state.sides.blue.turrets.push({ type: 'pillbox', x: 0, y: 0, hp: 120, dmg: 12, range: 250, lastFire: 0 });
+    state.time = 11;
+    state.aiNextDecision = 0;
+    updateAI(0);
+    return {
+      hasPillboxQueue: state.sides.blue.turretQueue.some(q => q.type === 'pillbox'),
+      hasBarracks: state.sides.blue.buildingQueue.some(q => q.type === 'barracks'),
+    };
+  });
+  assert(aiAt11.hasPillboxQueue === false, 'AI does NOT queue 2nd pillbox at t<12');
+
+  // t=12: AI builds 2nd pillbox
+  const aiPillbox2 = await page.evaluate(() => {
+    state = newState();
+    state.sides.blue.credits = 500;
+    // Place 1 pillbox already
+    state.sides.blue.turrets.push({ type: 'pillbox', x: 0, y: 0, hp: 120, dmg: 12, range: 250, lastFire: 0 });
+    state.time = 13;
+    state.aiNextDecision = 0;
+    updateAI(0);
+    return {
+      hasPillboxQueue: state.sides.blue.turretQueue.some(q => q.type === 'pillbox'),
+      hasBarracks: state.sides.blue.buildingQueue.some(q => q.type === 'barracks'),
+    };
+  });
+  assert(aiPillbox2.hasPillboxQueue === true, 'AI builds 2nd pillbox at t>=12 (defense-first)');
+  assert(aiPillbox2.hasBarracks === false, 'AI does NOT build barracks before 2nd pillbox');
+
+  // t=15: AI builds barracks after 2 pillboxes
+  const aiBuilds = await page.evaluate(() => {
+    state = newState();
+    state.sides.blue.credits = 500;
+    // Place 2 pillboxes already
+    state.sides.blue.turrets.push({ type: 'pillbox', x: 0, y: 0, hp: 120, dmg: 12, range: 250, lastFire: 0 });
+    state.sides.blue.turrets.push({ type: 'pillbox', x: 0, y: 0, hp: 120, dmg: 12, range: 250, lastFire: 0 });
+    state.time = 16;
+    state.aiNextDecision = 0;
+    updateAI(0);
+    return {
+      hasBarracks: state.sides.blue.buildingQueue.some(q => q.type === 'barracks'),
+    };
+  });
+  assert(aiBuilds.hasBarracks === true, 'AI builds barracks after 2 pillboxes at t>=15');
 
   // ─────────────────────────────────────────────────────────
   // TURRET
