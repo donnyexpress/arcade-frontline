@@ -539,7 +539,7 @@
       </div>
       <div id="hud-center">
         <div id="credits" data-last="0">200</div>
-    <div id="tutorial-hint">TAP <b style="color:#ffd700">BARRACKS</b> TO BEGIN →</div>
+    <div id="tutorial-hint">TAP <b style="color:#ffd700">PILLBOX</b> (75💰) TO BEGIN DEFENSE →</div>
         <div id="timer">3:00</div>
       </div>
       <div class="hud-bar blue">
@@ -1945,7 +1945,25 @@ function placeTurretOnMap(side, type) {
   const baseX = sideData.base.x;
   const baseY = sideData.base.y;
   const dir = side === 'red' ? 1 : -1;
-  const slotIndex = sideData.turrets.length;
+  // Spread turrets across the perimeter so they don't cluster.
+  // pillbox=0, turret=1 → use 4 slots apart for pillboxes (better coverage).
+  // Other turrets fill in remaining slots.
+  let slotIndex;
+  if (type === 'pillbox') {
+    // Place pillboxes at slots 0, 4 (top-mid and mid-bottom) for max spread
+    const pillboxCount = sideData.turrets.filter(t => t.type === 'pillbox').length;
+    slotIndex = pillboxCount === 0 ? 0 : 4;
+  } else {
+    // Turrets fill slots not used by pillboxes (1, 2, 3, 5, 6, 7)
+    const usedSlots = new Set(sideData.turrets.map(t => {
+      if (t.type === 'pillbox') return t.y < 300 ? 0 : 4;
+      return -1;
+    }));
+    slotIndex = 0;
+    for (let i = 0; i < 8; i++) {
+      if (!usedSlots.has(i)) { slotIndex = i; break; }
+    }
+  }
   // Perimeter arc defense: turrets form a curved line in front of the base.
   // All layout values from CFG.TURRET_PLACEMENT.
   const PERIMETER_OFFSET   = CFG.TURRET_PLACEMENT.PERIMETER_OFFSET;
@@ -2633,7 +2651,19 @@ class GameScene extends Phaser.Scene {
     const baseScale = displaySize / 396;
     sprite.setScale(baseScale);
     sprite.setDepth(bld.y);
-    return { sprite, baseScale };
+    // Add health bar above building
+    const barWidth = displaySize * 1.2;
+    const barHeight = 8;
+    const barY = -displaySize * 0.7;
+    const barBg = this.add.rectangle(0, barY, barWidth, barHeight, 0x000000);
+    barBg.setOrigin(0.5, 0.5);
+    const barInner = this.add.rectangle(0, barY, barWidth - 2, barHeight - 2, 0x1a1a1a);
+    barInner.setOrigin(0.5, 0.5);
+    const barFg = this.add.rectangle(0, barY, barWidth - 2, barHeight - 2, 0x33ff33);
+    barFg.setOrigin(0.5, 0.5);
+    const healthBar = this.add.container(0, 0, [barBg, barInner, barFg]);
+    healthBar.setDepth(bld.y + 0.1);
+    return { sprite, healthBar, barBg, barFg, barWidth, baseScale };
   }
 
   makeTurretSprite(t) {
@@ -2664,7 +2694,19 @@ class GameScene extends Phaser.Scene {
     const baseScale = displaySize / 396;
     sprite.setScale(baseScale);
     sprite.setDepth(t.y);
-    return { sprite, baseScale };
+    // Add health bar above turret/pillbox
+    const barWidth = displaySize * 1.2;
+    const barHeight = 6;
+    const barY = -displaySize * 0.8;
+    const barBg = this.add.rectangle(0, barY, barWidth, barHeight, 0x000000);
+    barBg.setOrigin(0.5, 0.5);
+    const barInner = this.add.rectangle(0, barY, barWidth - 2, barHeight - 2, 0x1a1a1a);
+    barInner.setOrigin(0.5, 0.5);
+    const barFg = this.add.rectangle(0, barY, barWidth - 2, barHeight - 2, 0x33ff33);
+    barFg.setOrigin(0.5, 0.5);
+    const healthBar = this.add.container(0, 0, [barBg, barInner, barFg]);
+    healthBar.setDepth(t.y + 0.1);
+    return { sprite, healthBar, barBg, barFg, barWidth, baseScale };
   }
 
   makeBaseSprite(side) {
@@ -2872,6 +2914,16 @@ class GameScene extends Phaser.Scene {
       s.sprite.x = s.bld.x;
       s.sprite.y = s.bld.y;
       s.sprite.setDepth(s.bld.y);
+      // Update health bar
+      if (s.healthBar) {
+        s.healthBar.x = s.bld.x;
+        s.healthBar.y = s.bld.y;
+        s.healthBar.setDepth(s.bld.y + 0.1);
+        const hpFrac = Math.max(0, s.bld.hp / s.bld.maxHp);
+        this.updateHealthBar(s, hpFrac);
+        // Hide bar if full HP (cleaner look)
+        s.healthBar.setVisible(hpFrac < 1.0);
+      }
     }
   }
 
@@ -2898,6 +2950,15 @@ class GameScene extends Phaser.Scene {
       s.sprite.x = s.t.x;
       s.sprite.y = s.t.y;
       s.sprite.setDepth(s.t.y);
+      // Update health bar
+      if (s.healthBar) {
+        s.healthBar.x = s.t.x;
+        s.healthBar.y = s.t.y;
+        s.healthBar.setDepth(s.t.y + 0.1);
+        const hpFrac = Math.max(0, s.t.hp / s.t.maxHp);
+        this.updateHealthBar(s, hpFrac);
+        s.healthBar.setVisible(hpFrac < 1.0);
+      }
     }
   }
 
@@ -2948,9 +3009,14 @@ function refreshUI() {
     creditsEl.textContent = newText;
   }
   creditsEl.classList.toggle('capped', isCapped);
-  // Auto-hide tutorial when first barracks is queued
+  // Auto-hide tutorial when player builds anything (pillbox, barracks, etc.)
   const hintEl = document.getElementById('tutorial-hint');
-  if (hintEl && (state.sides.red.buildingQueue.length > 0 || state.sides.red.buildings.length > 0)) {
+  if (hintEl && (
+    state.sides.red.buildingQueue.length > 0 ||
+    state.sides.red.buildings.length > 0 ||
+    state.sides.red.turretQueue.length > 0 ||
+    state.sides.red.turrets.length > 0
+  )) {
     hintEl.classList.add('hidden');
   }
   const t = Math.max(0, CFG.MATCH_TIME - state.time);
